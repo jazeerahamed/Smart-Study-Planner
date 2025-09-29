@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Study Planner</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #74ebd5 0%, #ACB6E5 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 50px 20px;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.95);
+      padding: 30px;
+      border-radius: 15px;
+      width: 100%;
+      max-width: 500px;
+      box-shadow: 0 4px 25px rgba(0,0,0,0.2);
+    }
+
+    h1, h2 {
+      text-align: center;
+    }
+
+    /* Quotes */
+    #quoteBox {
+      font-style: italic;
+      text-align: center;
+      margin-bottom: 15px;
+      color: #333;
+      font-size: 1rem;
+    }
+
+    #messageBox {
+      text-align: center;
+      margin-bottom: 15px;
+      font-weight: bold;
+      display: none;
+      padding: 8px;
+      border-radius: 5px;
+    }
+
+    .success {
+      color: #155724;
+      background: #d4edda;
+      border: 1px solid #c3e6cb;
+    }
+
+    .error {
+      color: #721c24;
+      background: #f8d7da;
+      border: 1px solid #f5c6cb;
+    }
+
+    .task-input {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .task-input input[type="text"] {
+      flex: 2;
+      padding: 8px;
+      margin-right: 5px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
+    .task-input input[type="date"] {
+      flex: 1;
+      padding: 8px;
+      margin-right: 5px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
+    .task-input button {
+      padding: 8px 12px;
+      border: none;
+      background: #28a745;
+      color: #fff;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .task-input button:hover {
+      background: #218838;
+    }
+
+    #taskList {
+      list-style: none;
+      padding: 0;
+    }
+
+    .task-item {
+      display: flex;
+      justify-content: space-between;
+      background: #f8f9fa;
+      padding: 10px;
+      margin-bottom: 8px;
+      border-radius: 5px;
+      align-items: center;
+      transition: all 0.3s ease-in-out;
+    }
+
+    .task-item button {
+      background: #dc3545;
+      border: none;
+      color: white;
+      padding: 5px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .task-item button:hover {
+      background: #c82333;
+    }
+
+    .progress-bar-container {
+      width: 100%;
+      background: #e9ecef;
+      border-radius: 10px;
+      height: 20px;
+      margin-top: 10px;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: #28a745;
+      border-radius: 10px;
+      transition: width 0.3s;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Smart Study Planner</h1>
+
+    <!-- Motivational Quote -->
+    <div id="quoteBox">Loading motivation...</div>
+
+    <!-- Message box -->
+    <div id="messageBox"></div>
+
+    <!-- Task input -->
+    <div class="task-input">
+      <input type="text" id="taskName" placeholder="Enter study task...">
+      <input type="date" id="taskDate">
+      <button id="addTaskBtn">Add Task</button>
+    </div>
+
+    <h2>Tasks</h2>
+    <ul id="taskList"></ul>
+
+    <h2>Progress</h2>
+    <div class="progress-bar-container">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+  </div>
+
+  <script>
+    const taskList = document.getElementById('taskList');
+    const addTaskBtn = document.getElementById('addTaskBtn');
+    const taskNameInput = document.getElementById('taskName');
+    const taskDateInput = document.getElementById('taskDate');
+    const progressBar = document.getElementById('progressBar');
+    const messageBox = document.getElementById('messageBox');
+    const quoteBox = document.getElementById('quoteBox');
+
+    let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+
+    // Motivational quotes
+    const quotes = [
+      "📚 Success is the sum of small efforts repeated day in and day out.",
+      "💡 Don’t watch the clock; do what it does. Keep going.",
+      "🔥 Push yourself, because no one else is going to do it for you.",
+      "🌟 The secret to getting ahead is getting started.",
+      "💪 Believe you can and you're halfway there.",
+      "🚀 Study while others are sleeping. Work while others are loafing.",
+      "✨ Focus on progress, not perfection."
+    ];
+
+    function showRandomQuote() {
+      const randomIndex = Math.floor(Math.random() * quotes.length);
+      quoteBox.textContent = quotes[randomIndex];
+    }
+
+    setInterval(showRandomQuote, 5000); // change every 5s
+    showRandomQuote(); // show one immediately
+
+    function saveTasks() {
+      localStorage.setItem('tasks', JSON.stringify(tasks));
+    }
+
+    function showMessage(msg, type = "success") {
+      messageBox.textContent = msg;
+      messageBox.className = type;
+      messageBox.style.display = "block";
+
+      setTimeout(() => {
+        messageBox.style.display = "none";
+      }, 2000);
+    }
+
+    function updateProgress() {
+      if (tasks.length === 0) {
+        progressBar.style.width = '0%';
+        return;
+      }
+      const completedTasks = tasks.filter(task => task.completed).length;
+      const progressPercent = (completedTasks / tasks.length) * 100;
+      progressBar.style.width = progressPercent + '%';
+    }
+
+    function renderTasks() {
+      taskList.innerHTML = '';
+      tasks.forEach((task, index) => {
+        const li = document.createElement('li');
+        li.className = 'task-item';
+
+        li.innerHTML = `
+          <span>
+            <input type="checkbox" ${task.completed ? 'checked' : ''} data-index="${index}">
+            ${task.name} - <small>${task.date}</small>
+          </span>
+          <button data-index="${index}">Delete</button>
+        `;
+
+        taskList.appendChild(li);
+      });
+      updateProgress();
+    }
+
+    addTaskBtn.addEventListener('click', () => {
+      const name = taskNameInput.value.trim();
+      const date = taskDateInput.value;
+
+      if (name === '' || date === '') {
+        showMessage("⚠️ Please enter both task name and date.", "error");
+        return;
+      }
+
+      tasks.push({ name, date, completed: false });
+      saveTasks();
+      renderTasks();
+
+      taskNameInput.value = '';
+      taskDateInput.value = '';
+
+      showMessage("✅ Task added successfully!");
+    });
+
+    taskList.addEventListener('click', (e) => {
+      const index = e.target.dataset.index;
+      if (e.target.tagName === 'BUTTON') {
+        tasks.splice(index, 1);
+        saveTasks();
+        renderTasks();
+        showMessage("🗑 Task deleted.", "success");
+      }
+    });
+
+    taskList.addEventListener('change', (e) => {
+      if (e.target.type === 'checkbox') {
+        const index = e.target.dataset.index;
+        tasks[index].completed = e.target.checked;
+        saveTasks();
+        updateProgress();
+        showMessage(tasks[index].completed ? "🎉 Task completed!" : "Task marked incomplete.", "success");
+      }
+    });
+
+    // Initial render
+    renderTasks();
+  </script>
+</body>
+</html>
